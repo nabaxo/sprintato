@@ -28,7 +28,7 @@ client.on('message', message => {
             sprintIsStarting = true;
             sprinters = [];
             if (args[0]) {
-                sprint(message, args[0]);
+                sprint(message, parseInt(args[0]));
             } else {
                 sprint(message);
             }
@@ -38,7 +38,9 @@ client.on('message', message => {
     else if (command === 'join') {
         if (sprintIsStarting) {
             if (args[0]) {
-                sprinters.push({ name: message.author.username, wordcount: parseInt(args[0]), delta: 0, wpm: 0 });
+                if (sprinters.filter(e => e.name !== message.author.username)) {
+                    sprinters.push({ name: message.author.username, wordcount: parseInt(args[0]), delta: 0, wpm: 0 });
+                }
                 message.channel.send(`@${message.author.username} joined with ${args[0]} starting words`);
                 return;
             } else {
@@ -54,11 +56,10 @@ client.on('message', message => {
     else if (command === 'wc') {
         if (sprintIsFinished && args[0]) {
             index = sprinters.findIndex((sprinter) => sprinter.name === message.author.username);
-            delta = args[0] - sprinters[index];
+            delta = parseInt(args[0]) - sprinters[index].wordcount;
             sprinters[index].wordcount = args[0];
             sprinters[index].delta = delta;
-            // sprinters[index].wpm = delta / time;
-            sprintIsFinished = false;
+            message.channel.send(`@${message.author.username} completed with ${delta} new words!`);
             return;
         } else {
             message.channel.send(`@${message.author.username} I didn't catch that, try again!`);
@@ -93,28 +94,29 @@ Use !join <wordcount> to join the sprint, leave out the wordcount to start from 
             setTimeout(() => {
                 sprintIsStarting = false;
                 minutesAndSeconds = new Date;
+                let sprintEndMinute = (parseInt(minutesAndSeconds.getMinutes()) + time) % 60;
                 message.channel.send(`**Starting the sprint!**
 You have ${time} minutes!
-~ It runs until ${minutesAndSeconds.getMinutes() + time}m and ${minutesAndSeconds.getSeconds()}s ~`);
+~ It runs until ${sprintEndMinute}m and ${minutesAndSeconds.getSeconds()}s ~`);
             }, bufferTime);
         }).then(() => {
             setTimeout(() => {
                 sprintIsFinished = true;
                 message.channel.send(`Finished the sprint, give your final word count with !wc <number>
-You have ${time} minutes!`);
+You have ${bufferTime / 60 / 1000} minutes!`);
             }, bufferTime + sprintingTime);
         }).then(() => {
             setTimeout(() => {
-                finishedList();
                 message.channel.send(`The results are in:
-${sprinters}`);
+${finishedList(time)}`);
+                sprintIsFinished = false;
             }, bufferTime + sprintingTime + bufferTime);
         }).catch((err) => {
             console.log(err);
         });
 }
 
-function finishedList() {
+function finishedList(time) {
     sprinters.sort((a, b) => {
         let wcA = a.delta;
         let wcB = b.delta;
@@ -122,8 +124,10 @@ function finishedList() {
         if (wcA > wcB) return 1;
         return 0;
     });
-    let result = sprinters;
-    return result;
+    let result = sprinters.map((author, index) => {
+        return `${index + 1}. ${author.name} with ${author.delta} new words, (${author.delta / time} wpm)`;
+    });
+    return result.join('\r\n');
 }
 
 function rollDice(quantity, type) {
