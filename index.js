@@ -97,11 +97,13 @@ Use !join <wordcount> to join the sprint, leave out the wordcount to start from 
 You have ${time} minutes!
 ~ It runs until ${minutesAndSeconds.getMinutes() + time}m and ${minutesAndSeconds.getSeconds()}s ~`);
             }, bufferTime);
+        }).then(() => {
             setTimeout(() => {
                 sprintIsFinished = true;
                 message.channel.send(`Finished the sprint, give your final word count with !wc <number>
 You have ${time} minutes!`);
             }, bufferTime + sprintingTime);
+        }).then(() => {
             setTimeout(() => {
                 finishedList();
                 message.channel.send(`The results are in:
