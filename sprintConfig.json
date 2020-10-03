@@ -1,3 +1,4 @@
 {
-    "defaultSprintTime": 20
+    "defaultSprintTime": 20,
+    "defaultBufferTime": 3
 }

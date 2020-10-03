@@ -1,11 +1,13 @@
 const Discord = require('discord.js');
 const fs = require('fs');
 const { prefix, token } = require('./config.json');
-let { defaultSprintTime } = require('./sprintConfig.json');
+let { defaultSprintTime, defaultBufferTime } = require('./sprintConfig.json');
 
 const client = new Discord.Client();
 
 let sprinters = [];
+let sprintObjectStarting;
+let sprintObjectRunning;
 let sprintIsStarting = false;
 let sprintIsFinished = false;
 
@@ -30,9 +32,13 @@ client.on('message', message => {
         if (sprintIsStarting === false) {
             sprintIsStarting = true;
             sprinters = [];
-            if (args[0]) {
+            if (args[0] && args[1]) {
+                sprint(message, parseInt(args[0]), parseInt(args[1]));
+            }
+            else if (args[0]) {
                 sprint(message, parseInt(args[0]));
-            } else {
+            }
+            else {
                 sprint(message);
             }
         }
@@ -44,7 +50,6 @@ client.on('message', message => {
             }, null, 4);
             fs.writeFileSync('sprintConfig.json', json + '\r\n', 'utf8');
             defaultSprintTime = parseInt(args[0]);
-            console.log(defaultSprintTime);
             return message.channel.send(`The new default sprint time is ${defaultSprintTime} minutes`);
         } else {
             return message.channel.send(`To set a new default time, write !sprint <number>`);
@@ -60,6 +65,11 @@ client.on('message', message => {
         } else {
             return message.reply(`There's no sprint currently starting, start one by typing !sprint`);
         }
+    } else if (command === 'cancel') {
+        sprintIsStarting = false;
+        clearTimeout(sprintObjectStarting);
+        clearTimeout(sprintObjectRunning);
+        return message.reply(`Sprint has been cancelled! Start a new one with !sprint <time>`);
     }
     else if (command === 'wc') {
         if (sprintIsFinished && parseInt(args[0])) {
@@ -88,38 +98,44 @@ client.on('message', message => {
 client.login(token);
 
 
-function sprint(message, time) {
+function sprint(message, time, buffer) {
     if (!time) {
         time = defaultSprintTime;
     }
-    let bufferTime = 3 * 60 * 1000;
+    if (!buffer) {
+        buffer = defaultBufferTime;
+    }
     let sprintingTime = time * 60 * 1000;
-    message.channel.send(`In ${bufferTime / 60 / 1000} minutes, we're going to be sprinting for ${time} minutes.
+    let bufferTime = buffer * 60 * 1000;
+
+    if (sprintIsStarting) {
+        message.channel.send(`In ${bufferTime / 60 / 1000} minutes, we're going to be sprinting for ${time} minutes.
 Use !join <wordcount> to join the sprint, leave out the wordcount to start from zero.`)
-        .then(() => {
-            setTimeout(() => {
-                sprintIsStarting = false;
-                minutesAndSeconds = new Date;
-                let sprintEndMinute = (parseInt(minutesAndSeconds.getMinutes()) + time) % 60;
-                message.channel.send(`**Starting the sprint!**
+            .then(() => {
+                sprintObjectStarting = setTimeout(() => {
+                    sprintIsStarting = false;
+                    minutesAndSeconds = new Date;
+                    let sprintEndMinute = (parseInt(minutesAndSeconds.getMinutes()) + time) % 60;
+                    message.channel.send(`**Starting the sprint!**
 You have ${time} minutes!
 ~ It runs until ${sprintEndMinute}m and ${minutesAndSeconds.getSeconds()}s ~`);
-            }, bufferTime);
-        }).then(() => {
-            setTimeout(() => {
-                sprintIsFinished = true;
-                message.channel.send(`Finished the sprint, give your final word count with !wc <number>
+                }, bufferTime);
+            }).then(() => {
+                sprintObjectRunning = setTimeout(() => {
+                    sprintIsFinished = true;
+                    message.channel.send(`Finished the sprint, give your final word count with !wc <number>
 You have ${bufferTime / 60 / 1000} minutes!`);
-            }, bufferTime + sprintingTime);
-        }).then(() => {
-            setTimeout(() => {
-                message.channel.send(`The results are in:
+                }, bufferTime + sprintingTime);
+            }).then(() => {
+                setTimeout(() => {
+                    message.channel.send(`The results are in:
 ${finishedList(time)}`);
-                sprintIsFinished = false;
-            }, bufferTime + sprintingTime + bufferTime);
-        }).catch((err) => {
-            console.log(err);
-        });
+                    sprintIsFinished = false;
+                }, bufferTime + sprintingTime + bufferTime);
+            }).catch((err) => {
+                console.log(err);
+            });
+    }
 }
 
 function addAndUpdateSprinters(message, wordcount) {
