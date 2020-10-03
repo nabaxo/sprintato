@@ -85,15 +85,19 @@ client.on('message', message => {
         }
     }
     else if (command === 'roll') {
-        if (args[0]) {
+        if (args[0] && diceRegex.test(args[0])) {
             let diceToRoll = args[0].split(diceRegex).filter(e => e !== '');
             if (diceToRoll[0] !== undefined) {
                 return message.reply(rollDice(diceToRoll[0], diceToRoll[1]).join(', '));
             } else {
                 return message.reply(rollDice(false, diceToRoll[1]));
             }
-        } else {
-            return message.channel.send(rollDice());
+        }
+        else if (!diceRegex.test(args[0])) {
+            return message.reply(`Roll a specific die or dice by writing !roll d# or !roll #d#`);
+        }
+        else {
+            return message.reply(rollDice());
         }
     }
 });
