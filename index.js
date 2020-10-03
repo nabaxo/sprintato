@@ -43,17 +43,6 @@ client.on('message', message => {
             }
         }
         return;
-    } else if (command === 'setdefault') {
-        if (Number.isInteger(parseInt(args[0]))) {
-            let json = JSON.stringify({
-                defaultSprintTime: parseInt(args[0])
-            }, null, 4);
-            fs.writeFileSync('sprintConfig.json', json + '\r\n', 'utf8');
-            defaultSprintTime = parseInt(args[0]);
-            return message.channel.send(`The new default sprint time is ${defaultSprintTime} minutes`);
-        } else {
-            return message.channel.send(`To set a new default time, write !sprint <number>`);
-        }
     }
     else if (command === 'join') {
         if (sprintIsStarting) {
@@ -65,7 +54,8 @@ client.on('message', message => {
         } else {
             return message.reply(`There's no sprint currently starting, start one by typing !sprint`);
         }
-    } else if (command === 'cancel') {
+    }
+    else if (command === 'cancel') {
         sprintIsStarting = false;
         clearTimeout(sprintObjectStarting);
         clearTimeout(sprintObjectRunning);
@@ -80,6 +70,18 @@ client.on('message', message => {
             return message.reply(`completed with ${delta} new words!`);
         } else {
             return message.reply(`I didn't catch that, try again!`);
+        }
+    }
+    else if (command === 'setdefault') {
+        if (Number.isInteger(parseInt(args[0]))) {
+            let json = JSON.stringify({
+                defaultSprintTime: parseInt(args[0])
+            }, null, 4);
+            fs.writeFileSync('sprintConfig.json', json + '\r\n', 'utf8');
+            defaultSprintTime = parseInt(args[0]);
+            return message.channel.send(`The new default sprint time is ${defaultSprintTime} minutes`);
+        } else {
+            return message.channel.send(`To set a new default time, write !sprint #`);
         }
     }
     else if (command === 'roll') {
@@ -123,7 +125,7 @@ You have ${time} minutes!
             }).then(() => {
                 sprintObjectRunning = setTimeout(() => {
                     sprintIsFinished = true;
-                    message.channel.send(`Finished the sprint, give your final word count with !wc <number>
+                    message.channel.send(`Finished the sprint, give your final word count with !wc #
 You have ${bufferTime / 60 / 1000} minutes!`);
                 }, bufferTime + sprintingTime);
             }).then(() => {
