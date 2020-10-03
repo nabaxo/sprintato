@@ -18,5 +18,10 @@ A Discord bot for writing sprints built on node and discordjs. Inspired by Sprin
   `node index.js`
 
 ## TODO
-1. Make it actually work.
-2. Look into automating start up and things.
+1. ~~Make it actually work~~
+2. Add new commands:
+   - !time
+   - !join same
+   - !leave
+3. Check how it would work in different channels
+4. Look into hosting it somewhere.
