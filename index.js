@@ -52,27 +52,17 @@ client.on('message', message => {
     }
     else if (command === 'join') {
         if (sprintIsStarting) {
-            if (args[0]) {
-                if (sprinters.length === 0) {
-                    sprinters.push({ name: message.author.username, wordcount: parseInt(args[0]), delta: 0, wpm: 0 });
-                    console.log('object');
-                    return message.reply(`joined with ${args[0]} starting words`);
-                } else if (sprinters.reduce((a, e) => e.name) === message.author.username) {
-                    sprinters.push({ name: message.author.username, wordcount: parseInt(args[0]), delta: 0, wpm: 0 });
-                }
-                console.log(sprinters);
+            if (parseInt(args[0])) {
+                addAndUpdateSprinters(message, args[0]);
             } else {
-                sprinters.push({ name: message.author.username, wordcount: 0, delta: 0, wpm: 0 });
-                console.log(sprinters);
-                console.log(sprinters.reduce((a, e) => e.name) !== message.author.username);
-                return message.reply(`joined with 0 starting words`);
+                addAndUpdateSprinters(message);
             }
         } else {
             return message.reply(`There's no sprint currently starting, start one by typing !sprint`);
         }
     }
     else if (command === 'wc') {
-        if (sprintIsFinished && args[0]) {
+        if (sprintIsFinished && parseInt(args[0])) {
             index = sprinters.findIndex((sprinter) => sprinter.name === message.author.username);
             delta = parseInt(args[0]) - sprinters[index].wordcount;
             sprinters[index].wordcount = args[0];
@@ -130,6 +120,23 @@ ${finishedList(time)}`);
         }).catch((err) => {
             console.log(err);
         });
+}
+
+function addAndUpdateSprinters(message, wordcount) {
+    if (!wordcount) {
+        wordcount = 0;
+    }
+    const author = message.author.username;
+    if (sprinters.length !== 0) {
+        if (sprinters.reduce((a, e) => e.name === author)) {
+            index = sprinters.findIndex((sprinter) => sprinter.name === author);
+            sprinters[index].wordcount = wordcount;
+            return message.reply(`updated join with ${wordcount} starting words`);
+        }
+    } else {
+        sprinters.push({ name: author, wordcount: wordcount, delta: 0, wpm: 0 });
+        return message.reply(`joined with ${wordcount} starting words`);
+    }
 }
 
 function finishedList(time) {
