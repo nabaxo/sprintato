@@ -1,5 +1,7 @@
 const Discord = require('discord.js');
+const fs = require('fs');
 const { prefix, token } = require('./config.json');
+let { defaultSprintTime } = require('./sprintConfig.json');
 
 const client = new Discord.Client();
 
@@ -19,6 +21,7 @@ client.on('message', message => {
     const diceRegex = /(\d+)?[d](\d+)/i;
 
     if (command === 'ping') {
+        console.log(message.author);
         return message.channel.send(`${args[0]}`);
     }
     else if (command === 'sprint') {
@@ -34,23 +37,38 @@ client.on('message', message => {
             }
         }
         return;
+    } else if (command === 'setdefault') {
+        if (Number.isInteger(parseInt(args[0]))) {
+            let json = JSON.stringify({
+                defaultSprintTime: parseInt(args[0])
+            }, null, 4);
+            fs.writeFileSync('sprintConfig.json', json + '\r\n', 'utf8');
+            defaultSprintTime = parseInt(args[0]);
+            console.log(defaultSprintTime);
+            return message.channel.send(`The new default sprint time is ${defaultSprintTime} minutes`);
+        } else {
+            return message.channel.send(`To set a new default time, write !sprint <number>`);
+        }
     }
     else if (command === 'join') {
         if (sprintIsStarting) {
             if (args[0]) {
-                if (sprinters.filter(e => e.name !== message.author.username)) {
+                if (sprinters.length === 0) {
+                    sprinters.push({ name: message.author.username, wordcount: parseInt(args[0]), delta: 0, wpm: 0 });
+                    console.log('object');
+                    return message.reply(`joined with ${args[0]} starting words`);
+                } else if (sprinters.reduce((a, e) => e.name) === message.author.username) {
                     sprinters.push({ name: message.author.username, wordcount: parseInt(args[0]), delta: 0, wpm: 0 });
                 }
-                message.channel.send(`@${message.author.username} joined with ${args[0]} starting words`);
-                return;
+                console.log(sprinters);
             } else {
-                sprinters.push({ name: message.author.username, wordcount: 0 });
-                message.channel.send(`@${message.author.username} joined with 0 starting words`);
-                return;
+                sprinters.push({ name: message.author.username, wordcount: 0, delta: 0, wpm: 0 });
+                console.log(sprinters);
+                console.log(sprinters.reduce((a, e) => e.name) !== message.author.username);
+                return message.reply(`joined with 0 starting words`);
             }
         } else {
-            message.channel.send(`There's no sprint currently starting, start one by typing !sprint`);
-            return;
+            return message.reply(`There's no sprint currently starting, start one by typing !sprint`);
         }
     }
     else if (command === 'wc') {
@@ -59,11 +77,9 @@ client.on('message', message => {
             delta = parseInt(args[0]) - sprinters[index].wordcount;
             sprinters[index].wordcount = args[0];
             sprinters[index].delta = delta;
-            message.channel.send(`@${message.author.username} completed with ${delta} new words!`);
-            return;
+            return message.reply(`completed with ${delta} new words!`);
         } else {
-            message.channel.send(`@${message.author.username} I didn't catch that, try again!`);
-            return;
+            return message.reply(`I didn't catch that, try again!`);
         }
     }
     else if (command === 'roll') {
@@ -84,9 +100,9 @@ client.login(token);
 
 function sprint(message, time) {
     if (!time) {
-        time = 1;
+        time = defaultSprintTime;
     }
-    let bufferTime = 1 * 60 * 1000;
+    let bufferTime = 3 * 60 * 1000;
     let sprintingTime = time * 60 * 1000;
     message.channel.send(`In ${bufferTime / 60 / 1000} minutes, we're going to be sprinting for ${time} minutes.
 Use !join <wordcount> to join the sprint, leave out the wordcount to start from zero.`)
