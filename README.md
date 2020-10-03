@@ -40,8 +40,8 @@ A Discord bot for writing sprints built on node and discordjs. Inspired by Sprin
 | !cancel       | Cancels sprint that's about to start or is running                          |
 | !setdefault # | Sets the default sprinting time to #                                        |
 
-| Bonus     | Effect      |
-| --------- | ----------- |
-| !roll     | Rolls a d6  |
-| !roll d#  | Rolls a d#  |
-| !roll #d# | rolls # d#s |
+| Bonus     | Effect     |
+| --------- | ---------- |
+| !roll     | Rolls a d6 |
+| !roll d#  | Rolls a d# |
+| !roll #d# | rolls #d#s |
